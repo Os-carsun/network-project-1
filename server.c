@@ -52,34 +52,71 @@ void remove_crlf(char* source)
         else if((int)(source[length-1]) == 10) source[length-1] = '\0';
     }
 }
-
+int command_switch(int argc, char** argv)
+{
+    if(argc <= 0) {
+        return 1;
+    }else if(argc >= 2){
+        //char* command = argv[0];
+        //char** args = &argv[1];
+        printf("command:%s\n", argv[0] );
+    }else {
+        //char* command = argv[0];
+        printf("command:%s\n", argv[0] );
+    }
+    return 0;
+}
+void free2d(char** source, int count)
+{
+    for(int k=0; k < count; k++){
+        char* tmp = source[k];
+        free(tmp);
+    }
+    printf("asdasdasdasdad");
+    free(source);
+}
 void parse_recv_data(int socket)
 {
-    char* inputData = (char*)malloc(sizeof(char)*(BUFFER_SIZE+1));
-    char* outputStr = "while";
     char* saveptr = NULL;
     char* substr = NULL;
     int i = 0;
-    char** command = (char**)malloc(sizeof(char*) * i + 1);
     const char const *delim = " ";
+    char* inputData = NULL;
+    char** command = NULL;
     int count = 0;
     while(1){
+        // init part
+        i = 0;
+        inputData = (char*)malloc(sizeof(char*)*(BUFFER_SIZE+1));
+        command = (char**)malloc(sizeof(char**) * i + 1);
         memset(inputData, 0, sizeof(char*) * BUFFER_SIZE);
+        //
         if( count = recv(socket, inputData, BUFFER_SIZE, 0) < 0 )
         {
             return;
         }else {
+            printf("inputData  %s<<< \n",inputData);
             substr = strtok_r(inputData, delim, &saveptr);
             do{
                 remove_crlf(substr);
-                command[i] = (char)malloc(sizeof(char) * strlen(substr) + 1);
-                strcpy(&command[i], substr);
-                i++;
+                command[i] = (char*)malloc(sizeof(char*) * strlen(substr) + 1);
+                strcpy(command[i], substr);
                 substr = strtok_r(NULL, delim, &saveptr);
                 if(substr != NULL){
-                    command = (char**)realloc(command, sizeof(char*) * i + 1);
+                    i++;
+                    command = (char**)realloc(command, sizeof(char**) * i + 1);
                 }
             }while(substr != NULL);
+            command_switch(i, command);
+            for(int k=0; k<=i; k++){
+                free(command[k]);
+                command[k] = NULL;
+            }
+            free(command);
+            free(inputData);
+            inputData = NULL;
+            command = NULL;
+            saveptr = NULL;
         }
     }
 }
