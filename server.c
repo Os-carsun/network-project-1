@@ -38,10 +38,21 @@ void *get_in_addr(struct sockaddr *sa)
 
     return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
+
 void renderStrToSocket(int socket, char* str)
 {
     send(socket, str, sizeof(str), 0);
 }
+
+void remove_crlf(char* source)
+{
+    int length = strlen(source);
+    if(length >= 2 ) {
+        if((int)(source[length-2]) == 13 && (int)(source[length-1]) == 10) source[length-2]='\0';
+        else if((int)(source[length-1]) == 10) source[length-1] = '\0';
+    }
+}
+
 void parse_recv_data(int socket)
 {
     char* inputData = (char*)malloc(sizeof(char)*(BUFFER_SIZE+1));
@@ -60,14 +71,15 @@ void parse_recv_data(int socket)
         }else {
             substr = strtok_r(inputData, delim, &saveptr);
             do{
-                puts(substr);
-                *command[i] = substr;
+                remove_crlf(substr);
+                command[i] = (char)malloc(sizeof(char) * strlen(substr) + 1);
+                strcpy(&command[i], substr);
                 i++;
-                command = (char**)realloc(command, sizeof(char*) * i + 1);
                 substr = strtok_r(NULL, delim, &saveptr);
+                if(substr != NULL){
+                    command = (char**)realloc(command, sizeof(char*) * i + 1);
+                }
             }while(substr != NULL);
-            printf("========printf=========\n");
-            for(int k=0;k < i;k++)puts(command[i]);
         }
     }
 }
