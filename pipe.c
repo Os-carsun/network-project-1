@@ -86,6 +86,29 @@ CPL* arrange(CPL **header){
     }
     return exeCPL;
 }
+void loopCPLpipe(CPL** header) {
+    int p[2];
+    pid_t pid;
+    int fd_in = 0;
+    while(*header != NULL) {
+        pipe(p);
+        if ( (pid = fork()) == -1) {
+            exit(EXIT_FAILURE);
+        }else if(pid == 0) {
+            dup2(fd_in, 0);
+            if((*header)->next != NULL)
+                dup2(p[1], 1);
+            close(p[0]);
+            execvp((*header)->cmds[0], (*header)->cmds);
+            exit(EXIT_FAILURE);
+        }else {
+            wait(NULL);
+            close(p[1]);
+            fd_in = p[0];
+            (*header) = (*header)->next;
+        }
+    }
+}
 void appendAndageing(CPL **header, CPL* newCPL) {
     ageingWait(header);
     appendCmd(header, newCPL);
@@ -93,11 +116,6 @@ void appendAndageing(CPL **header, CPL* newCPL) {
     if(tmp != NULL){
         loopCPLpipe(&tmp);
     }
-    /* if(tmp != NULL) {
-       printf("/////\n");
-       dumpCPL(tmp);
-       printf("/////\n");
-       }*/
 }
 void dumpCPL(CPL* header) {
     CPL* tmp = header;
@@ -109,49 +127,3 @@ void dumpCPL(CPL* header) {
     }
     printf("\n%s\n","=====" );
 }
-void loopCPLpipe(CPL** header) {
-    int p[2];
-    pid_t pid;
-    int fd_in = 0;
-    CPL* tmp = *header;
-    while(tmp->next) {
-        pipe(p);
-        if ( (pid = fork()) == -1) {
-            exit(EXIT_FAILURE);
-        }else if(pid == 0) {
-            dup2(fd_in, 0);
-            if(tmp->cmds != NULL)
-                dup2(p[1], 1);
-            close(p[0]);
-            execvp(tmp->cmds[0], tmp->cmds);
-            exit(EXIT_FAILURE);
-        }else {
-            wait(NULL);
-            close(p[1]);
-            fd_in = p[0];
-            tmp = tmp->next;
-        }
-    }
-}
-//int main()
-//{
-//    int fd[2], commands=0;
-//    char *cmds1[3] = {"A",NULL,NULL};
-//    char *cmds2[3] = {"B",NULL,NULL};
-//    char *cmds3[3] = {"C",NULL,NULL};
-//    char *cmds4[3] = {"D",NULL,NULL};
-//    char *cmds5[3] = {"E",NULL,NULL};
-//    char *cmds6[3] = {"F",NULL,NULL};
-//    //cmds = (char***)malloc(commands*sizeof(char***)+1);
-//    CPL* header = NULL;
-//    appendAndageing(&header,createCPL(cmds1,3));
-//    appendAndageing(&header,createCPL(cmds2,1));
-//    appendAndageing(&header,createCPL(cmds3,2));
-//    appendAndageing(&header,createCPL(cmds4,1));
-//    appendAndageing(&header,createCPL(cmds5,0));
-//    appendAndageing(&header,createCPL(cmds5,0));
-//    appendAndageing(&header,createCPL(cmds5,0));
-//
-//    //dumpCPL(header);
-//    return 0;
-//}

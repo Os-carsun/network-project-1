@@ -21,6 +21,7 @@ typedef struct CmdPipeList {
     struct CmdPipeList* next;
 } CPL;
 
+void loopCPLpipe(CPL**);
 void appendCmd(CPL** , CPL*);
 CPL* createCPL(char**, int);
 void ageingWait(CPL**);
@@ -28,4 +29,3 @@ CPL* removeCPL(CPL**, CPL*);
 CPL* arrange(CPL **);
 void appendAndageing(CPL **, CPL*);
 void dumpCPL(CPL*);
-void loopCPLpipe(CPL**);

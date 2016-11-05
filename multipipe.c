@@ -78,14 +78,19 @@ void loop_pipe(char ***cmd)
 int main()
 {
     char *ls[] = {"ls", NULL};
+    char *ls2[] = {"ls", NULL};
+    char *ls3[] = {"ls", NULL};
     char *grep[] = {"grep", "pipe", NULL};
     char *wc[] = {"wc", NULL};
     char **cmd[] = {ls, grep, wc, NULL};
 
-    loop_pipe(cmd);
+    //loop_pipe(cmd);
+    //loop_pipe(cmd);
     CPL* header = NULL;
-    appendAndageing(&header, createCPL(ls,1));
+    appendAndageing(&header, createCPL(ls,2));
     appendAndageing(&header, createCPL(grep,1));
     appendAndageing(&header, createCPL(wc,0));
-    return (0);
+    appendAndageing(&header, createCPL(ls2,0));
+    appendAndageing(&header, createCPL(ls3,0));
+   return (0);
 }
