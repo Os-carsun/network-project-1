@@ -40,14 +40,30 @@ CPL* removeCPL(CPL** prev, CPL* target) {
 }
 CPL* arrange(CPL **header){
     CPL* last = *header;
+    CPL* prevLast = *header;
     CPL* tmp = *header;
     CPL* prev = NULL;
     CPL* removed = NULL;
     CPL* exeCPL = NULL;
-    while(last->next) last=last->next;
-    if(last->wait != 0){//last cmd still need wait
+    while(last->next) {
+        prevLast = last;
+        last=last->next;
+    }
+    if(last->wait != 0) {//last cmd still need wait
         while(tmp) {
-            tmp->wait =  tmp->wait == 0? last->wait : tmp->wait;
+            if(tmp->wait == 0  && prevLast != tmp && tmp->next != NULL && tmp->next->wait != 0){
+                last->next = tmp->next;
+                tmp->next = last;
+                prevLast->next = NULL;
+                break;
+            }
+            tmp = tmp->next;
+        }
+        tmp = *header;
+        while(tmp) {
+            if(tmp->wait == 0) {
+                tmp->wait = last->wait;
+            }
             tmp = tmp->next;
         }
     }else {// last cmd can exec
@@ -55,11 +71,11 @@ CPL* arrange(CPL **header){
             if(tmp-> wait == 0) {
                 if(tmp == *header) {
                     printf("in\n");
-                   removed = removeCPL(header, tmp);
+                    removed = removeCPL(header, tmp);
                 }
                 else {
-                    printf("??\n");
-                   removed = removeCPL(prev->next, tmp);
+                    printf("c\n");
+                    removed = removeCPL(prev->next, tmp);
                 }
             }
             prev = tmp;
@@ -77,13 +93,11 @@ void appendAndageing(CPL **header, CPL* newCPL) {
     ageingWait(header);
     appendCmd(header, newCPL);
     CPL* tmp = arrange(header);
-        //dumpCPL(*header);
-    /*  if(tmp != NULL) {
-        printf("/////\n");
-        dumpCPL(tmp);
-        printf("/////\n");
-        dumpCPL(*header);
-    }*/
+     if(tmp != NULL) {
+         printf("/////\n");
+         dumpCPL(tmp);
+         printf("/////\n");
+     }
 }
 void dumpCPL(CPL* header){
     CPL* tmp = header;
@@ -104,12 +118,17 @@ int main()
     char *cmds2[3] = {"B",NULL,NULL};
     char *cmds3[3] = {"C",NULL,NULL};
     char *cmds4[3] = {"D",NULL,NULL};
+    char *cmds5[3] = {"E",NULL,NULL};
+    char *cmds6[3] = {"F",NULL,NULL};
     //cmds = (char***)malloc(commands*sizeof(char***)+1);
     CPL* header = NULL;
     appendAndageing(&header,createCPL(cmds1,3));
-    appendAndageing(&header,createCPL(cmds2,2));
-    appendAndageing(&header,createCPL(cmds3,1));
-    appendAndageing(&header,createCPL(cmds4,0));
+    appendAndageing(&header,createCPL(cmds2,1));
+    appendAndageing(&header,createCPL(cmds3,2));
+    appendAndageing(&header,createCPL(cmds4,1));
+    appendAndageing(&header,createCPL(cmds5,0));
+    appendAndageing(&header,createCPL(cmds5,0));
+    appendAndageing(&header,createCPL(cmds5,0));
 
     //dumpCPL(header);
     return 0;
