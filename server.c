@@ -14,6 +14,7 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include "pipe.h"
 #define PORT "3490"  // the port users will be connecting to
 
 #define BACKLOG 10	 // how many pending connections queue will hold
@@ -57,11 +58,8 @@ int command_switch(int argc, char** argv)
     if(argc <= 0) {
         return 1;
     }else if(argc >= 2){
-        //char* command = argv[0];
-        //char** args = &argv[1];
         printf("command:%s\n", argv[0] );
     }else {
-        //char* command = argv[0];
         printf("command:%s\n", argv[0] );
     }
     return 0;
@@ -72,7 +70,6 @@ void free2d(char** source, int count)
         char* tmp = source[k];
         free(tmp);
     }
-    printf("asdasdasdasdad");
     free(source);
 }
 void parse_recv_data(int socket)
@@ -95,7 +92,6 @@ void parse_recv_data(int socket)
         {
             return;
         }else {
-            printf("inputData  %s<<< \n",inputData);
             substr = strtok_r(inputData, delim, &saveptr);
             do{
                 remove_crlf(substr);
