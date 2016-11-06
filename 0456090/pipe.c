@@ -11,7 +11,7 @@ typedef struct CmdPipeList {
 
 void appendCmd(CPL** header, CPL* newCPL) {
     CPL* tmp = *header;
-    if(tmp == NULL) {
+    if(!tmp) {
         *header = newCPL;
         return;
     }
@@ -86,65 +86,40 @@ CPL* arrange(CPL **header){
     }
     return exeCPL;
 }
-//void loopCPLpipe(CPL** header) {
-//    int p[2];
-//    pid_t pid;
-//    int fd_in = 0;
-//    while(*header != NULL) {
-//        pipe(p);
-//        if ( (pid = fork()) == -1) {
-//            exit(EXIT_FAILURE);
-//        }else if(pid == 0) {
-//            dup2(fd_in, 0);
-//            if((*header)->next != NULL)
-//                dup2(p[1], 1);
-//            close(p[0]);
-//            execvp((*header)->cmds[0], (*header)->cmds);
-//            exit(EXIT_FAILURE);
-//        }else {
-//            wait(NULL);
-//            close(p[1]);
-//            fd_in = p[0];
-//            (*header) = (*header)->next;
-//        }
-//    }
-//}
-void loopCPLpipe(CPL** header) {
+void loopCPLpipe(CPL** header,int fd) {
     int p[2];
     pid_t pid;
     int fd_in = 0;
     char* command[] = {"cat", "removetag", "removetag0", "number", "ls"};
-    char* env = (char*)malloc(strlen(getenv("PATH"))*sizeof(char)+5);
-    char* envs[] = {"PATH=",NULL};
-    strcat(env,envs[0]);
-    strcat(env,getenv("PATH"));
-    envs[0] = env;
+    char* envs[] = {getenv("PATH"),NULL};
     while(*header != NULL) {
         pipe(p);
         if ( (pid = fork()) == -1) {
-            exit(EXIT_FAILURE);
+            //  exit(EXIT_FAILURE);
         }else if(pid == 0) {
-            dup2(fd_in, 0);
+            //close(STDOUT_FILENO);
+            dup2(fd, STDOUT_FILENO);
+            dup2(fd, STDERR_FILENO);
+            //dup2(fd_in, 0);
             if((*header)->next != NULL)
                 dup2(p[1], 1);
             close(p[0]);
             if(strcmp("setenv",(*header)->cmds[0])==0){
                 setenv((*header)->cmds[1],(*header)->cmds[2],1);
-                exit(1);
+                return;
             }
             if(strcmp("printenv",(*header)->cmds[0])==0){
+
                 fprintf(stderr, "%s=%s\n", (*header)->cmds[1],getenv((*header)->cmds[1]));
-                exit(1);
+                return;
             }
             for(int i=0; i<5; i++){
                 if(strcmp(command[i],(*header)->cmds[0])==0){
-                    if(execvp((*header)->cmds[0], (*header)->cmds)!=0){
-                        fprintf(stderr, "failled\n");
-                        exit(1);
-                    }
+                    execvpe((*header)->cmds[0], (*header)->cmds, envs);
                     break;
                 }else if(i==4){
                     fprintf(stderr, "Unknown commad \"%s\" \n", (*header)->cmds[0]);
+                    (*header) = (*header)->next;
                 }
             }
             exit(EXIT_FAILURE);
@@ -159,15 +134,15 @@ void loopCPLpipe(CPL** header) {
 static void execute_cmd(int fd, CPL**header) {
     pid_t cid;
     size_t i = 0, c = 0;
-    //cid = fork();
+    // cid = fork();
 
-    //if(cid == 0) {
-      close(STDOUT_FILENO);
-      dup2(fd, STDOUT_FILENO);
-      dup2(fd, STDERR_FILENO);
-      loopCPLpipe(header);
-   // }else {
-     //   waitpid(cid, NULL, 0);
+    // if(cid == 0) {
+    //close(STDOUT_FILENO);
+    //dup2(fd, STDOUT_FILENO);
+    //dup2(fd, STDERR_FILENO);
+    loopCPLpipe(header,fd);
+    // }else {
+    //waitpid(cid, NULL, 0);
     //}
 }
 void appendAndageing(int socket, CPL **header, CPL* newCPL) {
@@ -176,7 +151,6 @@ void appendAndageing(int socket, CPL **header, CPL* newCPL) {
     CPL* tmp = arrange(header);
     if(tmp != NULL){
         //loopCPLpipe(&tmp);
- //       dumpCPL(tmp);
         execute_cmd(socket, &tmp);
     }
 }

@@ -53,35 +53,23 @@ void remove_crlf(char* source)
         else if((int)(source[length-1]) == 10) source[length-1] = '\0';
     }
 }
-char** copy2d(int argc, char **argv)
+int command_switch(int argc, char** argv, int socket, CPL** cmdList)
 {
-    char** output = (char**)malloc(argc*sizeof(char*)+1);
-    for(int i = 0; i <= argc; i++){
-        if(argv[i]!=NULL) {
-            output[i] = (char*)malloc(strlen(argv[i])*sizeof(char) + 1);
-            strcpy(output[i], argv[i]);
-        }else output[i] = NULL;
-    }
-    return output;
-}
-int command_switch(int argc, char** _argv, int socket, CPL** cmdList)
-{
-    char** argv = copy2d(argc,_argv);
     if(argc <= 1) {// one command no arg
         if(strcmp(argv[0],"exit") == 0) {
             close(socket);
             return 0;
         }
+        //execute_cmd(socket, argv[0], argv);
         appendAndageing(socket, cmdList, createCPL(argv,0));
     }else if(argc >= 3) {
-        int havePipe = 0, i, b,y=0, wait=1;
+        int havePipe = 0, i, b;
         for(i=1,b=0; i<argc; i++) {
             if(argv[i][0] == '|') {
                 char** subcmd = (char**) malloc (sizeof(char**)*(i-1-b)+1);
-                for(int k = b;; k++) {
-                    if(argv[k][0] == '|')break;
-                    subcmd[k-b] = (char*) malloc(sizeof(char)*strlen(argv[k])+1);
-                    strcpy(subcmd[k-b], argv[k]);
+                int wait = 0;
+                for(int k = b; k<i; k++) {
+                    subcmd[k-b] = argv[k];
                 }
                 subcmd[i-b] = NULL;
                 if(argv[i][1] != '\0') {
@@ -97,13 +85,10 @@ int command_switch(int argc, char** _argv, int socket, CPL** cmdList)
         }
         if(havePipe == 0) {
             appendAndageing(socket, cmdList, createCPL(argv, 0));
-        } else if (b<argc){// have last cmd
+        } else if(b != i){// have last cmd
 
-            int k = i-1;
-            while(argv[k][0] != '|')k--;
-            if(argv[k][1] != '\0')
-              wait = atoi(&(argv[k][1]))-1;
-            appendAndageing(socket, cmdList, createCPL(&(argv[k+1]), 0+wait));
+                fprintf(stderr, "%s ,%s ,%s, i=%d,b=%d\n ",argv[0], argv[1], argv[2],i,b);
+            appendAndageing(socket, cmdList, createCPL(&(argv[i-b+1]), 0));
         }
     }else {// one command one arg
         int wait = 0;
@@ -116,6 +101,7 @@ int command_switch(int argc, char** _argv, int socket, CPL** cmdList)
             return;
         }
         appendAndageing(socket, cmdList, createCPL(argv,wait));
+        //execute_cmd(socket, argv[0], argv);
         return 0;
     }
     return 0;
@@ -261,28 +247,28 @@ int main(void)
         if (!fork()) { // this is the child process
             close(sockfd); // child doesn't need the listener
             const char* message[]={"****************************************\n",
-                "** Welcome to the information server. **\n",
-                "****************************************\n",
-                "** You are in the directory, /home/studentA/ras/.\n",
-                "** This directory will be under \"/\", in this system.\n",
-                "** This directory includes the following executable programs.\n",
-                "**\n",
-                "**  bin/\n",
-                "**  test.html   (test file)\n",
-                "**\n",
-                "** The directory bin/ includes:\n",
-                "**  cat\n",
-                "**  ls\n",
-                "**  removetag       (Remove HTML tags.)\n",
-                "**  removetag0      (Remove HTML tags.)\n",
-                "**  number          (Add a number in each line.)\n",
-                "**\n",
-                "** In addition, the following two commands are supported by ras.\n",
-                "**  setenv\n",
-                "**  printenv\n",
-                "**\n"};
+"** Welcome to the information server. **\n",
+"****************************************\n",
+"** You are in the directory, /home/studentA/ras/.\n",
+"** This directory will be under \"/\", in this system.\n",
+"** This directory includes the following executable programs.\n",
+"**\n",
+"**  bin/\n",
+"**  test.html   (test file)\n",
+"**\n",
+"** The directory bin/ includes:\n",
+"**  cat\n",
+"**  ls\n",
+"**  removetag       (Remove HTML tags.)\n",
+"**  removetag0      (Remove HTML tags.)\n",
+"**  number          (Add a number in each line.)\n",
+"**\n",
+"** In addition, the following two commands are supported by ras.\n",
+"**  setenv\n",
+"**  printenv\n",
+"**\n"};
             //if (send(new_fd, "Hello, world!", 13, 0) == -1)
-            //perror("send");
+                //perror("send");
             for(int i=0; i<21; i++) {
                 send(new_fd, message[i], strlen(message[i]), 0);
             }

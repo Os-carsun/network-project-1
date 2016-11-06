@@ -87,10 +87,10 @@ int main()
     //loop_pipe(cmd);
     //loop_pipe(cmd);
     CPL* header = NULL;
-    appendAndageing(0,&header, createCPL(ls,2));
-    appendAndageing(0,&header, createCPL(grep,1));
-    appendAndageing(0,&header, createCPL(wc,0));
-    appendAndageing(0,&header, createCPL(ls2,0));
-    appendAndageing(0,&header, createCPL(ls3,0));
+    appendAndageing(&header, createCPL(ls,2));
+    appendAndageing(&header, createCPL(grep,1));
+    appendAndageing(&header, createCPL(wc,0));
+    appendAndageing(&header, createCPL(ls2,0));
+    appendAndageing(&header, createCPL(ls3,0));
    return (0);
 }
