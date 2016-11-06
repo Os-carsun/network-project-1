@@ -90,6 +90,7 @@ void loopCPLpipe(CPL** header) {
     int p[2];
     pid_t pid;
     int fd_in = 0;
+    const char* command[] = {"ls", "cat", "removetag", "removetag0", "number", "printenv", "setenv"};
     while(*header != NULL) {
         pipe(p);
         if ( (pid = fork()) == -1) {
@@ -99,7 +100,13 @@ void loopCPLpipe(CPL** header) {
             if((*header)->next != NULL)
                 dup2(p[1], 1);
             close(p[0]);
-            execvp((*header)->cmds[0], (*header)->cmds);
+            for(int i=0; i<7; i++){
+                if(strcmp(command[i],(*header)->cmds[0])==0){
+                    execvp((*header)->cmds[0], (*header)->cmds);
+                }else {
+                    fprintf(stderr, "Unknown commad \"%s\" \n", (*header)->cmds[0]);
+                }
+            }
             exit(EXIT_FAILURE);
         }else {
             wait(NULL);
@@ -109,12 +116,27 @@ void loopCPLpipe(CPL** header) {
         }
     }
 }
-void appendAndageing(CPL **header, CPL* newCPL) {
+static void execute_cmd(int fd, CPL**header) {
+    pid_t cid;
+    size_t i = 0, c = 0;
+    cid = fork();
+
+    if(cid == 0) {
+        close(STDOUT_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        loopCPLpipe(header);
+    }else {
+        waitpid(cid, NULL, 0);
+    }
+}
+void appendAndageing(int socket, CPL **header, CPL* newCPL) {
     ageingWait(header);
     appendCmd(header, newCPL);
     CPL* tmp = arrange(header);
     if(tmp != NULL){
-        loopCPLpipe(&tmp);
+        //loopCPLpipe(&tmp);
+        execute_cmd(socket, &tmp);
     }
 }
 void dumpCPL(CPL* header) {

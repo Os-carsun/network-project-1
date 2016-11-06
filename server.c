@@ -53,14 +53,76 @@ void remove_crlf(char* source)
         else if((int)(source[length-1]) == 10) source[length-1] = '\0';
     }
 }
-int command_switch(int argc, char** argv)
+static void execute_cmd(int fd, char *cmd, char **params) {
+    pid_t cid;
+    size_t i = 0, c = 0;
+    const char* command[] = {"ls", "cat", "removetag", "removetag0", "number", "printenv", "setenv"};
+    cid = fork();
+
+    if(cid == 0) {
+        close(STDOUT_FILENO);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
+        for(int i=0; i<7; i++){
+            if(strcmp(command[i],cmd)==0){
+                execvp(cmd,params);
+                return;
+            }else {
+                fprintf(stderr, "Unknown commad \"%s\" \n", cmd);
+                return;
+            }
+
+        }
+    } else {
+        waitpid(cid, NULL, 0);
+    }
+}
+int command_switch(int argc, char** argv, int socket, CPL** cmdList)
 {
-    if(argc <= 0) {
-        return 1;
-    }else if(argc >= 2){
-        printf("command:%s\n", argv[0] );
-    }else {
-        printf("command:%s\n", argv[0] );
+    if(argc <= 1) {// one command no arg
+        if(strcmp(argv[0],"exit") == 0) {
+            close(socket);
+            return 0;
+        }
+        //execute_cmd(socket, argv[0], argv);
+        appendAndageing(socket, cmdList, createCPL(argv,0));
+    }else if(argc >= 3) {
+        int havePipe = 0, i, b;
+        for(i=1,b=0; i<argc; i++) {
+            if(argv[i][0] == '|') {
+                char** subcmd = (char**) malloc (sizeof(char**)*(i-1-b)+1);
+                int wait = 0;
+                for(int k = b; k<i; k++) {
+                    subcmd[k-b] = argv[k];
+                }
+                subcmd[i-b] = NULL;
+                if(argv[i][1] != '\0') {
+                    wait = atoi(&(argv[i][1]));
+                }
+                appendAndageing(socket, cmdList, createCPL(subcmd,wait));
+                if(i < argc) {//ignore | command
+                    i++;
+                    b=i;
+                }
+                havePipe = 1;
+            }
+        }
+        if(havePipe == 0) {
+            appendAndageing(socket, cmdList, createCPL(argv, 0));
+        } else if(b != i){// have last cmd
+            appendAndageing(socket, cmdList, createCPL(&(argv[i+b]), 0));
+        }
+    }else {// one command one arg
+        int wait = 0;
+        if(argv[1][0] == '|') {
+            if(argv[1][0] != '\0') {
+                wait = atoi(&argv[1][1]);
+            }
+            argv[1] = NULL;
+            appendAndageing(socket, cmdList, createCPL(argv,wait));
+        }
+        execute_cmd(socket, argv[0], argv);
+        return 0;
     }
     return 0;
 }
@@ -81,6 +143,7 @@ void parse_recv_data(int socket)
     char* inputData = NULL;
     char** command = NULL;
     int count = 0;
+    CPL* header = NULL;
     while(1){
         // init part
         i = 0;
@@ -103,7 +166,10 @@ void parse_recv_data(int socket)
                     command = (char**)realloc(command, sizeof(char**) * i + 1);
                 }
             }while(substr != NULL);
-            command_switch(i, command);
+            i++;
+            command = (char**)realloc(command, sizeof(char**) * i + 1);
+            command[i] = NULL;
+            command_switch(i, command, socket, &header);
             for(int k=0; k<=i; k++){
                 free(command[k]);
                 command[k] = NULL;

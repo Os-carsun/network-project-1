@@ -27,5 +27,5 @@ CPL* createCPL(char**, int);
 void ageingWait(CPL**);
 CPL* removeCPL(CPL**, CPL*);
 CPL* arrange(CPL **);
-void appendAndageing(CPL **, CPL*);
+void appendAndageing(int, CPL **, CPL*);
 void dumpCPL(CPL*);
