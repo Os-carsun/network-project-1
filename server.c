@@ -100,10 +100,12 @@ int command_switch(int argc, char** _argv, int socket, CPL** cmdList)
         } else if (b<argc){// have last cmd
 
             int k = i-1;
+            wait = 0;
             while(argv[k][0] != '|')k--;
             if(argv[k][1] != '\0')
               wait = atoi(&(argv[k][1]))-1;
-            appendAndageing(socket, cmdList, createCPL(&(argv[k+1]), 0+wait));
+                fprintf(stderr,"%d\n",wait);
+            appendAndageing(socket, cmdList, createCPL(&(argv[k+1]), wait));
         }
     }else {// one command one arg
         int wait = 0;
