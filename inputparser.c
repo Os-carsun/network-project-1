@@ -4,7 +4,7 @@
 typedef int BOOL;
 #define TRUE 1
 #define FALSE 0
-
+#include <unistd.h>
 const char* OPERATION_CHARACTER[] = { "|", "&&", ">", NULL };
 
 int isOP(char* aString) {
@@ -16,20 +16,19 @@ int isOP(char* aString) {
 }
 
 void appendStringToArray (char*** array, char* source ){
-    char** tmp = *array;
+    char*** tmp = array;
     int arraylen = 0;
     int stringlength = strlen(source);
-    if(tmp == NULL){
-        arraylen = 1;
-        tmp = (char**)malloc(sizeof(char*) * arraylen);
+    if(*array == NULL){
+        *array = (char**)malloc(sizeof(char*) * (arraylen + 1));
     }else {
-        while(tmp[arraylen] != NULL) arraylen++;
+        while((*array)[arraylen] != NULL) arraylen++;
     }
-    tmp[arraylen] = (char*) malloc(sizeof(char) * (stringlength + 1));
-    strcpy(tmp[arraylen], source);
-
-    tmp = (char**)realloc(tmp, sizeof(char*) * (arraylen + 1) );
-    tmp[arraylen + 1] = NULL;
+    (*array)[arraylen] = (char*) malloc(sizeof(char) * (stringlength + 1));
+    strcpy((*array)[arraylen], source);
+    arraylen++;
+    *array = (char**)realloc(*array, sizeof(char*) * (arraylen + 1) );
+    (*array)[arraylen] = NULL;
 }
 char*** parseString(char *data) {
     char *** commandPool = (char***)malloc(sizeof(char**) * 2);
@@ -37,7 +36,7 @@ char*** parseString(char *data) {
     const char* const delim = " ";
     char* substr = NULL;
     char* savePtr = NULL;
-    commandPool[0] = NULL;
+    commandPool[currentCommand] = NULL;
     substr = strtok_r(data, delim, &savePtr);
 
     do{
@@ -53,7 +52,6 @@ char*** parseString(char *data) {
             default:// normal
                 appendStringToArray(&commandPool[currentCommand], substr);
         }
-        fprintf(stderr, "%s,\n", substr);
         substr = strtok_r(NULL, delim, &savePtr);
     }while(substr);
 

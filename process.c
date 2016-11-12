@@ -18,14 +18,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 typedef struct process {
-    int id,
-    int needtrue,
-    char*** cmdsPtr,
+    int id;
+    int needtrue;
+    char*** cmdsPtr;
 } process;
-void doCommand(char ***cmds){
-    
-}
-int main(int argc, char *argv[])
-{ 
-    return 0;
+void doCommand(char*** cmds){
+       
+       for (int i = 0; cmds[i] != NULL; ++i) {
+           for (int k = 0; cmds[i][k] != NULL; k++) {
+               fprintf(stderr, "%s\n", cmds[i][k]);
+           }
+       }
+
+
 }

@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include "inputparser.h"
+#include "process.h"
 #define PORT "3490"  // the port users will be connecting to
 
 #define BACKLOG 10	 // how many pending connections queue will hold
@@ -88,16 +89,11 @@ void handleInput(int socket) {
         else strcat(inputData, buffer);
         memset(buffer, '\0', sizeof(char) * 21);
         if(checkAndRemoveCRLF(&inputData, dataSize)){
-            fprintf(stderr, "%s\n", inputData);
-            parseString(inputData);
+            cmd = parseString(inputData);
+            doCommand(cmd);
             dataSize = 0;
             free(inputData);
             inputData = (char*) malloc(sizeof(char) * 1);
-            //for(int i = 0; cmd[i] != NULL; i++) {
-            //    for(int k=0; cmd[i][k] != NULL; k++) {
-            //        fprintf(stderr, "%s\n", cmd[i][k]);
-            //    }
-            //}
         }
     }
 }
