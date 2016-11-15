@@ -62,6 +62,7 @@ void loop_pipe(process *cmd, int id) {
             close(p_fd[id][0]);
             p_fd[id][0]=-1;
             if(execvpe(ptr->cmdsPtr[0], ptr->cmdsPtr, getPATHenv())<0) {
+                fprintf(stderr, "unknown command [%s]\n", ptr->cmdsPtr[0]);
             }
             exit(1);
         }else {//farther Process
@@ -81,6 +82,7 @@ void loop_pipe_number(process *cmd, int id, int tar) {
     process* ptr = cmd;
     int fd_in=p_fd[id][0] ;
     int pid;
+    static int interrupt = 0;
     int save_out = dup(fileno(stdout));
     close(p_fd[id][1]);
     while (ptr != NULL) {
@@ -100,7 +102,9 @@ void loop_pipe_number(process *cmd, int id, int tar) {
                 dup2(p_fd[tar][1],fileno(stdout));
             close(p_fd[id][0]);
             p_fd[id][0]=-1;
-            execvpe(ptr->cmdsPtr[0], ptr->cmdsPtr, getPATHenv());
+            if(execvpe(ptr->cmdsPtr[0], ptr->cmdsPtr, getPATHenv()) < 0) {
+                fprintf(stderr, "unknown command [%s]\n", ptr->cmdsPtr[0]);
+            }
             exit(1);
         }else {//farther Process
             wait(NULL);
@@ -124,7 +128,7 @@ void initalProcessPool(process** p,int size) {
         (*p)[i].cmdsPtr = NULL;
     }
 }
-void doCommand(char*** cmds, int *processID){
+void doCommand(char*** cmds, int *processID, int socket){
     int commands = 0;
     int begin = *processID;
     process* processPool = NULL;
@@ -179,25 +183,31 @@ void doCommand(char*** cmds, int *processID){
         }
     }
     for(int i = 0; i < commands; i++) {
-        if(processPool[i].id < 0) continue;
+        if(processPool[i].id < 0) continue;//dont exec this commnad
 
+        if(isOP(processPool[i].cmdsPtr[0]) == 3 )exit(1);//exit
 
-        if(isOP(processPool[i].cmdsPtr[0]) == 3 )exit(1);
-
-        if(isOP(processPool[i].cmdsPtr[0]) == 4 ) {
+        if(isOP(processPool[i].cmdsPtr[0]) == 4 ) {//setenv
             setenv(processPool[i].cmdsPtr[1], processPool[i].cmdsPtr[2], 1);
         }
 
-        if(isOP(processPool[i].cmdsPtr[0]) == 5 ) {
+        if(isOP(processPool[i].cmdsPtr[0]) == 5 ) {//printenv
             fprintf(stderr, "%s=%s\n",processPool[i].cmdsPtr[1], getenv(processPool[i].cmdsPtr[1]));
         }
-
-        int save_out,out;
+///for file output
+        int save_out = -1, out = -1;
         if(processPool[i].fileOutput != NULL){
             out = open(processPool[i].fileOutput, O_RDWR|O_CREAT|O_APPEND, 0600);
             save_out = dup(fileno(stdout));
-            if (-1 == dup2(out, fileno(stdout))) { perror("cannot redirect stdout"); }
+            dup2(out, fileno(stdout));
+        }else {
+            close(fileno(stdout));
+            out = socket;
+            save_out = dup(fileno(stdout));
+            dup2(out, fileno(stdout));
+            dup2(out, fileno(stderr));
         }
+///---
         if(processPool[i].pipeTo != NULL) {
             process* ptr = processPool[i].pipeTo;
             while(ptr->pipeTo != NULL)ptr = ptr->pipeTo;
@@ -222,11 +232,14 @@ void doCommand(char*** cmds, int *processID){
         }else {
             loop_pipe(&processPool[i], (processPool[i].id) % PMAX);
         }
-        if(processPool[i].fileOutput != NULL){
+///if stdout has benn changed, move oringin stdout to fileno(stdout)
+        if(save_out != -1){
             fflush(stdout); close(out);
             dup2(save_out, fileno(stdout));
             close(save_out);
         }
+///---
+
     }
     initalProcessPool(&processPool, commands);
 }

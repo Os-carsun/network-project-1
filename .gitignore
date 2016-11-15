@@ -1,3 +1,7 @@
 a.out
 main.c
 tag*
+*.swp
+runtime
+myshell
+

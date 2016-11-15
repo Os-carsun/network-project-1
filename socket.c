@@ -92,7 +92,7 @@ void handleInput(int socket) {
         else strcat(inputData, buffer);
         memset(buffer, '\0', sizeof(char) * 21);
         if(checkAndRemoveCRLF(&inputData, dataSize)){
-            doCommand(parseString(inputData), &processID);
+            doCommand(parseString(inputData), &processID, socket);
             cmd = NULL;
             dataSize = 0;
             free(inputData);

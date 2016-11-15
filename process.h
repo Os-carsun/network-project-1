@@ -1,7 +1,7 @@
 
 
 
-void doCommand( char***, int* );
+void doCommand( char***, int*, int);
 void pipeInit();
 
 
