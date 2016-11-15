@@ -1,8 +1,8 @@
 
 
 
-void doCommand( char*** );
-
+void doCommand( char***, int* );
+void pipeInit();
 
 
 

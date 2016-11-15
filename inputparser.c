@@ -5,7 +5,7 @@ typedef int BOOL;
 #define TRUE 1
 #define FALSE 0
 #include <unistd.h>
-const char* OPERATION_CHARACTER[] = { "|", "&&", ">", NULL };
+const char* OPERATION_CHARACTER[] = { "|", "&&", ">", "exit", "setenv", "printenv", NULL };
 
 int isOP(char* aString) {
     for(int i = 0; OPERATION_CHARACTER[i] != NULL; i++) {
@@ -48,7 +48,12 @@ char*** parseString(char *data) {
                 commandPool = (char***)realloc(commandPool, sizeof(char**) * ( 2 + currentCommand));
                 commandPool[currentCommand] = NULL;
                 appendStringToArray(&commandPool[currentCommand], substr);
+                currentCommand++;
+                commandPool = (char***)realloc(commandPool, sizeof(char**) * ( 2 + currentCommand));
+                commandPool[currentCommand] = NULL;
                 break;
+            case 3://setenv
+            case 4://printenv
             default:// normal
                 appendStringToArray(&commandPool[currentCommand], substr);
         }

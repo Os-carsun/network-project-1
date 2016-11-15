@@ -76,10 +76,13 @@ void handleInput(int socket) {
     char* buffer = NULL;
     size_t a;
     char*** cmd=NULL;
+    int processID = 0;
     buffer = (char*) malloc(sizeof(char) * 21);
 
     memset(buffer, '\0', sizeof(char) * 21);
+    pipeInit();
     while(1){
+        send(socket, "%", 1, 0);
         if(recv(socket, buffer, 20, 0) < 0) {
             //input failled;
         }
@@ -89,8 +92,8 @@ void handleInput(int socket) {
         else strcat(inputData, buffer);
         memset(buffer, '\0', sizeof(char) * 21);
         if(checkAndRemoveCRLF(&inputData, dataSize)){
-            cmd = parseString(inputData);
-            doCommand(cmd);
+            doCommand(parseString(inputData), &processID);
+            cmd = NULL;
             dataSize = 0;
             free(inputData);
             inputData = (char*) malloc(sizeof(char) * 1);
@@ -168,7 +171,7 @@ int main(void)
             perror("accept");
             continue;
         }
-
+        chdir("./runtime");
         inet_ntop(their_addr.ss_family,
                 get_in_addr((struct sockaddr *)&their_addr),
                 s, sizeof s);

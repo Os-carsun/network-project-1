@@ -9,4 +9,4 @@ typedef int BOOL;
 
 int isOP( char* );
 void appendStringToArray( char***, char* );
-char*** parseString(char *);
+char*** parseString( char *);
